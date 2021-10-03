@@ -1,26 +1,9 @@
-from signs import *
-from sorting import set_num_of_standards
+from barcode_lab.barcode_utils import *
 
-methods = ["Histogram", "DFT", "DCT", "Scale", "Gradient"]  # methods for LAB №3
+if __name__ == '__main__':
+    path_to_image = "./face_base/1_1.jpg"
+    path_to_image_same = "./face_base/1_2.jpg"
+    path_to_image_another = "./face_base/11_1.jpg"
+    calc_hist_from_image(path_to_image)
 
-visualize = True  # show graphs
-show_images = True  # show images in optimal search
-
-num_of_standards = 2  # set num of standards(training dataset) before executable cycle
-
-set_num_of_standards(num_of_standards)
-
-#  ======== LAB №3 ==========
-# for method in methods:
-#     search(method, visualize=visualize)
-
-for i in range(1, 10):
-    num_of_standards = i
-    set_num_of_standards(num_of_standards)
-    search('DCT', 20, visualize = False)
-
-
-#  ======== LAB №4 ==========
-#search_optimal(visualize, show_images)
-
-
+    create_ean_barcode(path_to_image)
