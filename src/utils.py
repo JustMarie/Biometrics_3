@@ -1,6 +1,6 @@
 import cv2 as cv
 import numpy as np
-from src import biom_features as bf
+from src import biometrics_features as bf
 
 HIST_METHOD = "HISTCMP_CORREL"
 BIN = 8
@@ -17,8 +17,7 @@ GRADIENT_WIDTH = 10
 GRADIENT_STEP = 10
 
 
-def compare_images(path_to_image_1, path_to_image_2, p,  **kwargs):
-
+def compare_images(path_to_image_1, path_to_image_2, **kwargs):
     image_1 = np.float32(cv.imread(path_to_image_1, 0))
     image_2 = np.float32(cv.imread(path_to_image_2, 0))
 
@@ -47,8 +46,11 @@ def compare_images(path_to_image_1, path_to_image_2, p,  **kwargs):
         dct_1_vect = zigzag(dct_1, p, bright_pixel=False)
         dct_2_vect = zigzag(dct_2, p, bright_pixel=False)
 
-        #dct_1 = cv.dct(image_1 / DCT_NORMALIZATION)
-        #dct_2 = cv.dct(image_2 / DCT_NORMALIZATION)
+        dct_1 = cv.dct(image_1 / DCT_NORMALIZATION)
+        dct_2 = cv.dct(image_2 / DCT_NORMALIZATION)
+
+        dct_1_vect = zigzag(dct_1, p, bright_pixel=False)
+        dct_2_vect = zigzag(dct_2, p, bright_pixel=False)
 
         diff = np.linalg.norm(dct_1_vect - dct_2_vect)
 
@@ -80,11 +82,11 @@ def compare_images(path_to_image_1, path_to_image_2, p,  **kwargs):
 
     elif kwargs["method"] == "Gradient":
 
-        #barcode_1 = get_barcode_from_image(path_to_image_1)
-        #barcode_2 = get_barcode_from_image(path_to_image_2)
+        # barcode_1 = get_barcode_from_image(path_to_image_1)
+        # barcode_2 = get_barcode_from_image(path_to_image_2)
 
-        gr1 = np.array(bf.gradient(image_1, w, st))
-        gr2 = np.array(bf.gradient(image_2, w, st))
+        gr1 = np.array(bf.gradient(image_1, 15, 10))
+        gr2 = np.array(bf.gradient(image_2, 15, 10))
 
         diff = np.linalg.norm(gr1 - gr2)
 
@@ -113,19 +115,15 @@ def get_barcode_from_image(path):
     return np.fromiter(result, dtype=np.int)
 
 
-def zigzag(C, p , bright_pixel=True):
+def zigzag(C, p, bright_pixel=True):
     # DCT and DFT return matrix p*p
     t = 0
     vect_size = int(p * (p + 1) / 2)
     vector = np.zeros(vect_size, dtype=int)
 
     for y in range(p):
-        for k in reversed(range(y+1)):
-            vector[t] = C[y-k, k]
+        for k in reversed(range(y + 1)):
+            vector[t] = C[y - k, k]
             t += 1
     first_pixel = int(not bright_pixel)
-    return vector[first_pixel:,]
-
-
-
-
+    return vector[first_pixel:, ]

@@ -15,22 +15,22 @@ def set_num_of_standards(num_of_standards):
         pass
 
     path = os.getcwd()
-    files = next(os.walk("./ATT"))[2]
+    files = next(os.walk("./ATT_masked"))[2]
     os.makedirs("./ATT_run/test", exist_ok=True)
 
     for file in files:
         current_person, current_photo_num = file.split("_")
-        persons = next(os.walk("./ATT"))[1]
+        persons = next(os.walk("./ATT_masked"))[1]
 
         testing = True if int(current_photo_num.split(".")[0]) > num_of_standards else False
         destination_folder = "test" if testing else f"{current_person}"
 
         if current_person not in persons:
             os.makedirs("./ATT_run/" + current_person, exist_ok=True)
-            shutil.copyfile(f"{path}/ATT/{file}", f"{path}/ATT_run/{destination_folder}/{file}")
+            shutil.copyfile(f"{path}/ATT_masked/{file}", f"{path}/ATT_run/{destination_folder}/{file}")
 
         else:
-            shutil.copyfile(f"{path}/ATT/{file}", f"{path}/ATT_run/{destination_folder}/{file}")
+            shutil.copyfile(f"{path}/ATT_masked/{file}", f"{path}/ATT_run/{destination_folder}/{file}")
 
     dirs = next(os.walk("./ATT_run"))[1]
     for dir in dirs:

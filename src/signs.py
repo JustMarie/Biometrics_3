@@ -17,7 +17,7 @@ method_weight = {  # weights for LAB №4
 }
 
 
-def search(method,p, **kwargs):
+def search(method, **kwargs):
     fail = 0
     success = 0
     num_of_test = []
@@ -50,7 +50,7 @@ def search(method,p, **kwargs):
                 result.append(
                     {
                         "score": compare_images(f"{PATH}/ATT_run/test/{image}",
-                                                f"{PATH}/ATT_run/{person}/{standard}", p,
+                                                f"{PATH}/ATT_run/{person}/{standard}", kwargs.get("p"),
                                                 method=method),
                         "answer": person,
                     }
@@ -110,7 +110,9 @@ def search_optimal(visualize, show_images):
         plt.ylabel('Percentage of success')
         plt.title('Parallel FARES')
         plt.ion()
-        fig.canvas.manager.window.move(650, 400)
+        # plt.get_current_fig_manager().window.setGeometry(0, 0, 650, 400)
+        # fig.canvas.manager.window.move
+        # fig.canvas.manager.window.move(650, 400)
         plt.show()
 
     if show_images:
@@ -125,7 +127,7 @@ def search_optimal(visualize, show_images):
 
     for image in images:
         if show_images:
-            test_img = cv.imread(f"{PATH}/ATT_run/test/{image}")
+            test_img = cv.imread(f"{PATH}/ATT_run/test/{image}", 0)
             cv.imshow("TEST IMAGE", test_img)
         result = {}
 
@@ -142,6 +144,7 @@ def search_optimal(visualize, show_images):
                         {
                             "score": compare_images(f"{PATH}/ATT_run/test/{image}",
                                                     f"{PATH}/ATT_run/{person}/{standard}",
+                                                    20,
                                                     method=method),
                             "answer": person,
                         }
@@ -156,7 +159,7 @@ def search_optimal(visualize, show_images):
                 result[internal_answer] += method_weight[method]
 
             if show_images:
-                img = cv.imread(f"{PATH}/ATT/{internal_answer}_1.png")
+                img = cv.imread(f"{PATH}/ATT_masked/{internal_answer}_1.png", 0)
                 cv.imshow(f"{method.upper()} ANSWER", img)
 
         answer = max(result, key=result.get)
@@ -171,6 +174,7 @@ def search_optimal(visualize, show_images):
 
         if visualize:
             graph.set_data(num_of_test, percentage)
+            plt.draw()
             plt.pause(WAIT_TIME)
 
     print("Optimal method")

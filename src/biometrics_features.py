@@ -2,15 +2,13 @@ import numpy as np
 import cv2 as cv
 
 from math import exp, pi, sqrt, cos, sin
-import matplotlib.pyplot as plt
-import seaborn as sns
-import os
+
 
 def Scale(src, m, n):
-    M, N = src.shape
-    small_img = cv.resize(src, (15, 18), interpolation=cv.INTER_AREA)
- #   pixel_vector = small_img.ravel()
- #   return pixel_vector
+    # M, N = src.shape
+    small_img = cv.resize(src, (m, n), interpolation=cv.INTER_AREA)
+    #   pixel_vector = small_img.ravel()
+    #   return pixel_vector
     return small_img
     
     
