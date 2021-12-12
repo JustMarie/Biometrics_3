@@ -1,6 +1,7 @@
 import os
 from utils import *
 import matplotlib.pyplot as plt
+from matplotlib import gridspec
 
 PATH = os.getcwd()
 
@@ -17,23 +18,24 @@ method_weight = {  # weights for LAB №4
 }
 
 
-def search(method, **kwargs):
+def search(method, visualize, params):
     fail = 0
     success = 0
+    num_of_standards = 0
     num_of_test = []
     percentage = []
 
+    #  images for test ( тестовая выборка )
     images = next(os.walk(f"{PATH}/ATT_run/test"))[2]
 
-    if kwargs.get("visualize"):
-        fig = plt.figure()
-        ax = fig.add_subplot(111)
-        graph, = ax.plot([], [])
-        ax.set_xlim([0, len(images)])
-        ax.set_ylim([0, 105])
-        plt.xlabel('Number of tests')
-        plt.ylabel('Percentage of success')
-        plt.title(f'Method: {method.upper()}')
+    if visualize:
+        fig, ax = plt.subplots(nrows=1, ncols=3, figsize=(20, 5))
+        graph, = ax[0].plot([], [])
+        ax[0].set_xlim([0, len(images)])
+        ax[0].set_ylim([0, 105])
+        ax[0].set_xlabel('Number of tests')
+        ax[0].set_ylabel('Percentage of success')
+        ax[0].set_title(f'Method: {method.upper()}')
         plt.ion()
         plt.show()
 
@@ -45,13 +47,16 @@ def search(method, **kwargs):
             if person == "test":
                 continue
 
+            # эталоны
             standards = next(os.walk(f"./ATT_run/{person}"))[2]
+            if num_of_standards == 0:
+                num_of_standards = len(standards)
             for standard in standards:
                 result.append(
                     {
                         "score": compare_images(f"{PATH}/ATT_run/test/{image}",
-                                                f"{PATH}/ATT_run/{person}/{standard}", kwargs.get("p"),
-                                                method=method),
+                                                f"{PATH}/ATT_run/{person}/{standard}", method, params),
+                        "path": f"{PATH}/ATT_run/{person}/{standard}",
                         "answer": person,
                     }
                 )
@@ -67,32 +72,88 @@ def search(method, **kwargs):
         num_of_test.append(success + fail)
         percentage.append(success / (fail + success) * 100)
 
-        if kwargs.get("visualize"):
+        if visualize:
             graph.set_data(num_of_test, percentage)
+
+            img_search = np.float32(cv.imread(f"{PATH}/ATT_run/test/{image}", 0))
+            ax[1].imshow(img_search, cmap='gray')
+            ax[1].set_title("Sample")
+
+            img_res = np.float32(cv.imread(result[0]["path"], 0))
+            ax[2].imshow(img_res, cmap='gray')
+            ax[2].set_title("Result")
             plt.pause(WAIT_TIME)
 
-    t_num = int((fail + success) / 40)
-    p_num = int(10 - t_num)
+    test_num = 10 - num_of_standards
     success_proc = round(success / (fail + success) * 100, 2)
 
     if method == "Histogram":
-        print(f"ORL(40, {p_num}, {t_num}, CV) "+f"[{method}: 112*92->{BIN} /L1/ "+f"{success_proc}%] \n")
+        print(
+            f"ORL(40, {num_of_standards}, {test_num}, CV) " + f"[{method}: 112*92->{params['BIN']} /L1/ " + f"{success_proc}%] \n")
     if method == "Scale":
-        print(f"ORL(40, {p_num}, {t_num}, CV) " + f"[{method}: 112*92->{M}*{N} /L1/ " + f"{success_proc}%] \n")
+        print(
+            f"ORL(40, {num_of_standards}, {test_num}, CV) " + f"[{method}: 112*92->{params['M']}*{params['N']} /L1/ " + f"{success_proc}%] \n")
     if method == "DCT":
-        print(f"ORL(40, {p_num}, {t_num}, CV) " + f"[{method}: 112*92->{p}(zigzag) /L1/ " + f"{success_proc}%] \n")
+        print(
+            f"ORL(40, {num_of_standards}, {test_num}, CV) " + f"[{method}: 112*92->{params['p']}(zigzag) /L1/ " + f"{success_proc}%] \n")
     if method == "DFT":
-        print(f"ORL(40, {p_num}, {t_num}, CV) " + f"[{method}: 112*92->{p}(zigzag) /L1/ " + f"{success_proc}%] \n")
+        print(
+            f"ORL(40, {num_of_standards}, {test_num}, CV) " + f"[{method}: 112*92->{params['p']}(zigzag) /L1/ " + f"{success_proc}%] \n")
     if method == "Gradient":
-        print(f"ORL(40, {p_num}, {t_num}, CV) " + f"[{method}: 112*92-> W={w}, step={st} /L1/ " + f"{success_proc}%] \n")
-        #print(f"ORL(40, {p_num}, {t_num}, CV) " + f"[{method}:" + f"{success_proc}%] \n")
-    #print(f"method: {method}")
-    #print(f"fail: {fail}")
-    #print(f"success: {success}")
-    #print(f"percentage of success: {success / (fail + success) * 100}\n")
+        print(
+            f"ORL(40, {num_of_standards}, {test_num}, CV) " + f"[{method}: 112*92-> W={params['w']}, step={params['st']} /L1/ " + f"{success_proc}%] \n")
 
 
-def search_optimal(visualize, show_images):
+def search_optimal_one_method(method):
+    params = dict(p=0, br_px=False, BIN=0, M=0, N=0, w=0, st=0)
+    hist_params = [8, 16, 32, 64, 128]
+    scale_params = [[12, 10], [14, 12], [16, 13], [18, 15], [20, 16], [20, 18], [22, 18]]
+
+    if method == "Histogram":
+
+        for i in hist_params:
+            params.update(BIN=i)
+            search("Histogram", True, params)
+
+    elif method == "DCT":
+
+        print("Without bright pixel")
+        for i in range(4, 29, 4):
+            params.update(p=i)
+            search("DCT", True, params)
+
+        print("With bright pixel")
+        for i in range(4, 29, 4):
+            params.update(p=i, br_px=True)
+            search("DCT", True, params)
+
+    elif method == "DFT":
+
+        print("Without bright pixel")
+        for i in range(28, 30, 4):
+            params.update(p=i)
+            search("DFT", True, params)
+
+        print("With bright pixel")
+        for i in range(28, 30, 4):
+            params.update(p=i, br_px=True)
+            search("DFT", False, params)
+
+    elif method == "Scale":
+
+        for i in scale_params:
+            params.update(M=i[0], N=i[1])
+            search("Scale", False, params)
+
+    elif method == "Gradient":
+
+        for st in range(3, 16, 4):
+            for w in range(5, 31, 5):
+                params.update(w=w, st=st)
+                search("Gradient", False, params)
+
+
+def search_optimal_all_methods(visualize, show_images, params):
     fail = 0
     success = 0
     num_of_test = []
@@ -101,7 +162,22 @@ def search_optimal(visualize, show_images):
     images = next(os.walk(f"{PATH}/ATT_run/test"))[2]
 
     if visualize:
+        # fig = plt.figure()
+        # ax = fig.add_subplot(111)
+        # graph, = ax.plot([], [])
+        # ax.set_xlim([0, len(images)])
+        # ax.set_ylim([0, 105])
+        # plt.xlabel('Number of tests')
+        # plt.ylabel('Percentage of success')
+        # plt.title('Parallel FARES')
+        # plt.ion()
+        # # plt.get_current_fig_manager().window.setGeometry(0, 0, 650, 400)
+        # # fig.canvas.manager.window.move
+        # # fig.canvas.manager.window.move(650, 400)
+        # plt.show()
+
         fig = plt.figure()
+
         ax = fig.add_subplot(111)
         graph, = ax.plot([], [])
         ax.set_xlim([0, len(images)])
@@ -143,9 +219,8 @@ def search_optimal(visualize, show_images):
                     internal_result.append(
                         {
                             "score": compare_images(f"{PATH}/ATT_run/test/{image}",
-                                                    f"{PATH}/ATT_run/{person}/{standard}",
-                                                    20,
-                                                    method=method),
+                                                    f"{PATH}/ATT_run/{person}/{standard}", method, params),
+                            "path": f"{PATH}/ATT_run/{person}/{standard}",
                             "answer": person,
                         }
                     )
@@ -159,7 +234,7 @@ def search_optimal(visualize, show_images):
                 result[internal_answer] += method_weight[method]
 
             if show_images:
-                img = cv.imread(f"{PATH}/ATT_masked/{internal_answer}_1.png", 0)
+                img = cv.imread(f"{PATH}/ATT/{internal_answer}_1.png", 0)
                 cv.imshow(f"{method.upper()} ANSWER", img)
 
         answer = max(result, key=result.get)
